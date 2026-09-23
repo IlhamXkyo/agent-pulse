@@ -1,140 +1,183 @@
-# AgentPulse ⚡
+# AgentPulse
 
-> **Next-Gen Autonomous AI Agent Observability, Traces Waterfall & Interactive Playground Studio**
+A self-hosted observability dashboard and trace visualizer for autonomous AI agents.
 
-[![Next.js](https://img.shields.io/badge/Next.js-15.1-black?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-19.0-blue?style=flat-square&logo=react)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
-[![Prisma](https://img.shields.io/badge/Prisma-6.3-2d3748?style=flat-square&logo=prisma)](https://www.prisma.io/)
-[![SQLite](https://img.shields.io/badge/SQLite-Local_Embedded-003b57?style=flat-square&logo=sqlite)](https://www.sqlite.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg?style=flat-square)](LICENSE)
+When building multi-step agents with tool calling, debugging usually involves digging through messy terminal output or sending telemetry to third-party hosted services. AgentPulse runs locally on top of SQLite, providing a lightweight waterfall view of spans, tool invocations, and token usage without any cloud dependencies.
 
-AgentPulse provides production-grade observability, distributed tracing, and benchmark evaluation for autonomous AI agents and LLM chains. Built with an ultra-clean, dark cyberpunk aesthetic inspired by Linear and Raycast, AgentPulse delivers sub-millisecond trace inspection without external vendor lock-in.
+## Features
 
----
+- **Trace Waterfall View**: Inspect latency breakdowns across planning, tool calls, and LLM completions.
+- **Span Inspection**: View raw prompt inputs, function arguments, model names, and structured outputs for every step.
+- **Agent Registry**: Track registered agents, foundation models, failure rates, and average response times.
+- **Execution Playground**: Run test prompts locally with simulated search or sandbox tools to verify trace logging.
+- **Evaluation Tracking**: Log benchmark results and quality scores directly alongside traces.
+- **Local SQLite Storage**: Single-file database managed with Prisma. No external database or Docker setup required.
 
-## 🌟 Key Highlights
+## Getting Started
 
-- **Interactive Trace Waterfall**: Visualize complex multi-agent execution graphs, tool calls, and LLM completions with precision timing and offset bars.
-- **Span Inspector Drawer**: Drill down into raw input prompts, tool parameters, token usage, and structured outputs for every step.
-- **Autonomous Agent Registry**: Manage your entire agent fleet across multiple foundation models (Claude 3.5 Sonnet, GPT-4o, DeepSeek R1, Gemini 1.5 Pro).
-- **Execution Playground & Simulator**: Test agent prompts interactively with web search tools and sandboxed Python runners while streaming live telemetry into the database.
-- **Evaluations & Benchmark Suite**: Continuous LLM-as-a-Judge scoring, hallucination tracking, and compliance metrics.
-- **Secure Telemetry Ingestion API**: OpenTelemetry-compatible endpoints protected by scoped API keys.
-- **Self-Contained Architecture**: Powered by embedded SQLite via Prisma ORM for instant zero-config local development.
+### Prerequisites
 
----
+- Node.js 20 or higher
+- npm 10 or higher
 
-## 🏗️ Architecture
+### Installation
 
-```text
-  [ External Agent Runners ]     [ Web Playground UI ]
-              │                            │
-              ▼                            ▼
-  [ POST /api/traces ]         [ POST /api/playground/run ]
-              │                            │
-              └──────────────┬─────────────┘
-                             │
-                             ▼
-               [ Next.js 15 App Router ]
-                             │
-                  [ Prisma 6.3 ORM ]
-                             │
-                    [ SQLite Engine ]
-          ┌──────────────────┼──────────────────┐
-          ▼                  ▼                  ▼
-     (Agents)             (Traces)         (Evaluations)
-                             │
-                             ▼
-                          (Spans)
-```
+Clone the repository and install dependencies:
 
----
-
-## 🚀 Quick Start
-
-### 1. Clone the repository
 ```bash
 git clone https://github.com/IlhamXkyo/agent-pulse.git
 cd agent-pulse
-```
-
-### 2. Install dependencies
-```bash
 npm install
 ```
 
-### 3. Initialize SQLite Database & Seed Data
-```bash
-# Push database schema to local SQLite dev.db
-npx prisma db push
+### Database Setup
 
-# Populate with realistic AI agent traces and telemetry
+Run Prisma to set up the local SQLite database and populate sample telemetry:
+
+```bash
+npx prisma db push
 npm run db:seed
 ```
 
-### 4. Launch Development Server
+This creates a local `dev.db` file in the project root with initial agent records and trace histories.
+
+### Running Locally
+
+Start the development server:
+
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) to view the dashboard.
 
----
-
-## 📡 Telemetry Ingest API
-
-You can stream traces directly from your Python or TypeScript agents using the `/api/traces` endpoint:
+To build and run the production bundle:
 
 ```bash
-curl -X POST http://localhost:3000/api/traces \
-  -H "Content-Type: application/json" \
-  -d '{
-    "agentId": "<agent_id>",
-    "name": "AutonomousCodeRefactorWorkflow",
-    "status": "SUCCESS",
-    "durationMs": 1840,
-    "promptTokens": 1420,
-    "completionTokens": 890,
-    "costUsd": 0.0175,
-    "tags": "production,auth,refactor",
-    "spans": [
-      {
-        "name": "tool_call:read_codebase",
-        "spanType": "TOOL",
-        "status": "OK",
-        "startOffsetMs": 120,
-        "durationMs": 340,
-        "input": "{\"path\": \"src/auth.ts\"}",
-        "output": "{\"bytesRead\": 4192}"
-      },
-      {
-        "name": "llm_generate:claude-3-5-sonnet",
-        "spanType": "LLM",
-        "status": "OK",
-        "startOffsetMs": 460,
-        "durationMs": 1380,
-        "input": "{\"temperature\": 0.2}",
-        "output": "{\"diff\": \"+ redis.set(...) \"}"
-      }
-    ]
-  }'
+npm run build
+npm start
 ```
 
----
+## Telemetry Ingest API
 
-## 🛠️ Tech Stack
+Send traces directly from your agent framework using HTTP POST:
 
-- **Framework**: Next.js 15 (App Router, Server Actions & Route Handlers)
-- **Frontend**: React 19, Tailwind CSS v3.4, Lucide React icons
-- **ORM / Database**: Prisma 6.3 with SQLite
-- **Runtime**: Node.js v20+
+**Endpoint:** `POST /api/traces`
 
----
+### Headers
 
-## 📄 License
+```http
+Content-Type: application/json
+Authorization: Bearer <api_key>
+```
 
-Distributed under the MIT License. See `LICENSE` for more information.
+### Request Body Example
 
-Developed with ❤️ by **[IlhamXkyo](https://github.com/IlhamXkyo)**.
+```json
+{
+  "agentId": "cm8... (agent ID from database)",
+  "name": "AuthServiceRefactor",
+  "status": "SUCCESS",
+  "durationMs": 1420,
+  "promptTokens": 1150,
+  "completionTokens": 620,
+  "costUsd": 0.012,
+  "tags": "production,auth",
+  "spans": [
+    {
+      "name": "planner:intent_parse",
+      "spanType": "CHAIN",
+      "status": "OK",
+      "startOffsetMs": 0,
+      "durationMs": 110,
+      "input": "{\"instruction\": \"Refactor JWT refresh handler\"}",
+      "output": "{\"steps\": [\"read_file\", \"generate_diff\"]}"
+    },
+    {
+      "name": "tool:read_file",
+      "spanType": "TOOL",
+      "status": "OK",
+      "startOffsetMs": 110,
+      "durationMs": 280,
+      "input": "{\"path\": \"src/auth.ts\"}",
+      "output": "{\"bytes\": 2400}"
+    },
+    {
+      "name": "llm:claude-3-5-sonnet",
+      "spanType": "LLM",
+      "status": "OK",
+      "startOffsetMs": 390,
+      "durationMs": 1030,
+      "input": "{\"temperature\": 0.2}",
+      "output": "{\"patch\": \"+ redis.set(...) \"}",
+      "model": "claude-3-5-sonnet",
+      "tokens": 840
+    }
+  ]
+}
+```
+
+### Response
+
+Returns the created trace with its assigned `traceId` and nested spans:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "cm8abc...",
+    "traceId": "trc_9a12b3c4",
+    "name": "AuthServiceRefactor",
+    "status": "SUCCESS"
+  }
+}
+```
+
+## Project Structure
+
+```text
+agent-pulse/
+├── prisma/
+│   ├── schema.prisma       # Database schema (Agent, Trace, Span, Evaluation, ApiKey)
+│   └── seed.ts             # Sample telemetry seed script
+├── src/
+│   ├── app/
+│   │   ├── api/            # Route handlers (/traces, /agents, /evals, /playground/run)
+│   │   ├── agents/         # Fleet management page
+│   │   ├── evals/          # Benchmark and evaluation scoring page
+│   │   ├── playground/     # Interactive testing UI
+│   │   ├── settings/       # API key generator and docs
+│   │   ├── traces/         # Full trace and span explorer
+│   │   ├── layout.tsx      # App shell with dark theme
+│   │   └── page.tsx        # Dashboard overview
+│   ├── components/         # Reusable UI widgets (TraceWaterfall, MetricCard, Sidebar)
+│   └── lib/                # Database client singleton and formatting helpers
+├── .env.example
+├── package.json
+└── tsconfig.json
+```
+
+## Available Scripts
+
+- `npm run dev`: Starts the Next.js development server with hot reload.
+- `npm run build`: Compiles TypeScript and builds the production Next.js bundle.
+- `npm start`: Runs the built production server.
+- `npm run db:push`: Applies schema changes to local SQLite without creating migration files.
+- `npm run db:seed`: Seeds the database with sample telemetry.
+- `npm run db:studio`: Opens Prisma Studio GUI to inspect database records in the browser.
+
+## Configuration
+
+Environment variables can be set in `.env`:
+
+```bash
+# Path to SQLite database file
+DATABASE_URL="file:./dev.db"
+
+# Optional port configuration (defaults to 3000)
+PORT=3000
+```
+
+## License
+
+MIT License. See [LICENSE](LICENSE) for details.
