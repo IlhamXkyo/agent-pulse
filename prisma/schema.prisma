@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Agent {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  model       String
+  version     String   @default("v1.0.0")
+  status      String   @default("ACTIVE") // ACTIVE, IDLE, DEGRADED, OFFLINE
+  successRate Float    @default(98.5)
+  totalRuns   Int      @default(0)
+  avgLatency  Float    @default(0.0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  traces      Trace[]
+}
+
+model Trace {
+  id               String       @id @default(cuid())
+  traceId          String       @unique
+  agentId          String
+  agent            Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  name             String
+  status           String       @default("SUCCESS") // SUCCESS, ERROR, RUNNING
+  durationMs       Int
+  promptTokens     Int          @default(0)
+  completionTokens Int          @default(0)
+  totalTokens      Int          @default(0)
+  costUsd          Float        @default(0.0)
+  errorMessage     String?
+  tags             String       @default("production")
+  metadata         String?
+  createdAt        DateTime     @default(now())
+  spans            Span[]
+  evaluations      Evaluation[]
+}
+
+model Span {
+  id            String   @id @default(cuid())
+  traceId       String
+  trace         Trace    @relation(fields: [traceId], references: [id], onDelete: Cascade)
+  parentSpanId  String?
+  name          String
+  spanType      String   // LLM, TOOL, RETRIEVAL, ROUTING, CHAIN
+  status        String   @default("OK") // OK, ERROR
+  startOffsetMs Int      @default(0)
+  durationMs    Int
+  input         String   @default("{}")
+  output        String   @default("{}")
+  model         String?
+  tokens        Int?     @default(0)
+  createdAt     DateTime @default(now())
+}
+
+model Evaluation {
+  id         String   @id @default(cuid())
+  traceId    String?
+  trace      Trace?   @relation(fields: [traceId], references: [id], onDelete: SetNull)
+  metricName String
+  score      Float
+  passed     Boolean  @default(true)
+  feedback   String?
+  evaluator  String   @default("LLM-as-a-Judge")
+  createdAt  DateTime @default(now())
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  name       String
+  keyPrefix  String
+  keyHash    String
+  scopes     String    @default("read,write")
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+}
